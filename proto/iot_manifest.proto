@@ -2,3 +2,117 @@ syntax = "proto3";
 
 package iot_manifest;
 
+// The definition of authentication service
+
+message User {
+    int32 id = 1;
+    string username = 2;
+    string password = 3;
+    Role role = 4;
+}
+
+enum Role {
+    USER = 0;
+    ADMIN = 1;
+}
+
+message AuthRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message AuthResponse {
+    string token = 1;
+    Role role = 2;
+}
+
+message VerifyTokenRequest {
+    string token = 1;
+    Role role = 2;
+}
+
+message VerifyTokenResponse {
+    bool valid = 1;
+}
+
+service AuthService {
+    rpc Auth(AuthRequest) returns (AuthResponse);
+    rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}
+
+// The definition of IoT device service
+
+message Device {
+    int32 id = 1;
+    string name = 2;
+    string description = 3;
+    DeviceType type = 4;
+    bool hasAccess = 5;
+
+    // The following fields are only used for thermostat
+    int32 temperature = 6;
+    int32 targetTemperature = 7;
+    int32 temperatureStep = 8;
+    int32 minTemperature = 9;
+    int32 maxTemperature = 10;
+
+    // The following fields are only used for sensor
+    int32 value = 11;
+    int32 min = 12;
+    int32 max = 13;
+}
+
+enum DeviceType {
+    SENSOR = 0;
+    THERMOSTAT = 1;
+}
+
+message DeviceEvent {
+    int32 deviceId = 1;
+    string commandDescription = 2;
+
+    // The following fields are only used for thermostat
+    int32 targetTemperature = 3;
+    int32 temperatureStep = 4;
+
+    // The following fields are only used for sensor
+    int32 value = 5;
+}
+
+message GetDevicesRequest {
+    VerifyTokenRequest token = 1;
+}
+
+message AddAccessRequest {
+    VerifyTokenRequest token = 1;
+    repeated int32 deviceIds = 2;
+}
+
+message AddAccessResponse {
+    Device devices = 1;
+    bool success = 2;
+    string message = 3;
+}
+
+message RemoveAccessRequest {
+    VerifyTokenRequest token = 1;
+    int32 deviceId = 2;
+}
+
+message RemoveAccessResponse {
+    repeated Device devices = 1;
+    bool success = 2;
+    string message = 3;
+}
+
+message RecordStatisticsResponse {
+    // We don't need to return anything
+}
+
+service IoTService {
+    rpc GetDevices(GetDevicesRequest) returns (stream Device) {}
+    rpc RecordStatistics(stream Device) returns (RecordStatisticsResponse) {}
+    rpc SendCommand(stream DeviceEvent) returns (stream Device) {}
+    rpc AddAccess(stream AddAccessRequest) returns (stream AddAccessResponse) {}
+    rpc RemoveAccess(stream RemoveAccessRequest) returns (stream RemoveAccessResponse) {}
+}
