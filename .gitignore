@@ -17,3 +17,6 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+# del python cache
+client/python/__pycache__
