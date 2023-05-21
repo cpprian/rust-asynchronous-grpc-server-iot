@@ -8,20 +8,28 @@ use tonic::{Status, Request, Response};
 use crate::iot_manifest::{AuthRequest, AuthResponse, VerifyTokenRequest, VerifyTokenResponse};
 use crate::iot_manifest::auth_service_server::AuthService;
 
-#[derive(Default)]
+#[derive(Debug, Serialize, Deserialize)]
+struct User {
+    id: u32,
+    username: String,
+    password: String,
+    role: Role,
+}
+
 pub struct AuthServer {
     pub users: Arc::<RwLock<HashMap<String, (String, Role)>>>,
     pub secret_key: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-enum Role {
+#[derive(Debug, Serialize, Deserialize, PartialEq, Copy, Clone)]
+pub enum Role {
     Admin, 
     User,
 }
 
 impl From<i32> for Role {
     fn from(role: i32) -> Self {
+        println!("Role: {}", role);
         match role {
             0 => Role::Admin,
             1 => Role::User,
@@ -39,11 +47,17 @@ struct Claims {
 
 impl AuthServer {
     pub fn new() -> Self {
-        let users = serde_json::from_str::<HashMap<String, (String, Role)>>(
-            &fs::read_to_string("../data/user_data.json").unwrap(),
-        ).unwrap();
+        let users = serde_json::from_str::<Vec<User>>(
+            &fs::read_to_string("data/user_data.json").unwrap(),
+        )
+        .unwrap()
+        .into_iter()
+        .map(|userdata| (userdata.username.clone(), (userdata.password, userdata.role)))
+        .collect::<HashMap<String, (String, Role)>>();
 
         let secret_key = b"secret_key".to_vec();
+
+        println!("Users: {:?}", users);
 
         Self {
             users: Arc::new(RwLock::new(users)),
@@ -55,7 +69,10 @@ impl AuthServer {
         let users = self.users.read().unwrap();
 
         match users.get(username) {
-            Some((expected_password, role)) if expected_password == password => Ok(*role),
+            Some((expected_password, role)) if expected_password == password => {
+                println!("Role: {:?}", role);
+                Ok(*role)
+            },
             _ => Err(Status::unauthenticated("Invalid username/password")),
         }
     }
@@ -77,11 +94,7 @@ impl AuthServer {
     }
 
     fn validate_token(&self, token: &str, expected_role: Role) -> Result<(), Status> {
-        let validation = Validation {
-            algorithms: vec![Algorithm::HS256],
-            validate_exp: true,
-            ..Default::default()
-        };
+        let validation = Validation::default();
 
         match decode::<Claims>(
             token,
@@ -109,6 +122,8 @@ impl AuthService for AuthServer {
             token,
             role: role as i32,
         };
+
+        println!("Response: {:?}", response);
 
         Ok(Response::new(response))
     }

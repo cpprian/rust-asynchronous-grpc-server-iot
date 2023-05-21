@@ -16,6 +16,7 @@ serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 jsonwebtoken = "8.3.0"
 chrono = "0.4.24"
+prost = "0.11.9"
 
 [build-dependencies]
 tonic-build = "0.9.2"

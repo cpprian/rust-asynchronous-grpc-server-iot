@@ -3,48 +3,48 @@
         "id": 1,
         "username": "john",
         "password": "john",
-        "role": "ADMIN"
+        "role": "Admin"
     },
     {
         "id": 2,
         "username": "jane",
         "password": "jane",
-        "role": "USER"
+        "role": "User"
     },
     {
         "id": 3,
         "username": "sensor01",
         "password": "sensor01",
-        "role": "USER"
+        "role": "User"
     },
     {
         "id": 4,
         "username": "sensor02",
         "password": "sensor02",
-        "role": "USER"
+        "role": "User"
     },
     {
         "id": 5,
         "username": "thermostat01",
         "password": "thermostat01",
-        "role": "USER"
+        "role": "User"
     },
     {
         "id": 6,
         "username": "thermostat02",
         "password": "thermostat02",
-        "role": "USER"
+        "role": "User"
     },
     {
         "id": 7,
         "username": "sensor03",
         "password": "sensor03",
-        "role": "USER"
+        "role": "User"
     },
     {
         "id": 8,
         "username": "sensor03",
         "password": "sensor03",
-        "role": "USER"
+        "role": "User"
     }
 ]

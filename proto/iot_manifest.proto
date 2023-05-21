@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package iot_manifest;
 
+option go_package = ".";
+
 // The definition of authentication service
 
 message User {
@@ -12,8 +14,8 @@ message User {
 }
 
 enum Role {
-    USER = 0;
-    ADMIN = 1;
+    ADMIN = 0;
+    USER = 1;
 }
 
 message AuthRequest {
