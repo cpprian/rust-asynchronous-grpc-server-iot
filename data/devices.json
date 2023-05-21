@@ -1,0 +1,78 @@
+[
+    {
+      "id": 1,
+      "name": "Sensor 1",
+      "description": "Sensor device 1",
+      "device_type": 0,
+      "has_access": true,
+      "temperature": 0,
+      "target_temperature": 0,
+      "temperature_step": 0,
+      "min_temperature": 0,
+      "max_temperature": 0,
+      "value": 50,
+      "min": 50,
+      "max": 100
+    },
+    {
+      "id": 2,
+      "name": "Sensor 2",
+      "description": "Sensor device 2",
+      "device_type": 0,
+      "has_access": true,
+      "temperature": 0,
+      "target_temperature": 0,
+      "temperature_step": 0,
+      "min_temperature": 0,
+      "max_temperature": 0,
+      "value": 50,
+      "min": 50,
+      "max": 100
+    },
+    {
+      "id": 3,
+      "name": "Sensor 3",
+      "description": "Sensor device 3",
+      "device_type": 0,
+      "has_access": true,
+      "temperature": 0,
+      "target_temperature": 0,
+      "temperature_step": 0,
+      "min_temperature": 0,
+      "max_temperature": 0,
+      "value": 50,
+      "min": 50,
+      "max": 100
+    },
+    {
+      "id": 4,
+      "name": "Thermostat 1",
+      "description": "Thermostat device 1",
+      "device_type": 1,
+      "has_access": true,
+      "temperature": 0,
+      "target_temperature": 0,
+      "temperature_step": 0,
+      "min_temperature": 0,
+      "max_temperature": 200,
+      "value": 0,
+      "min": 0,
+      "max": 0
+    },
+    {
+      "id": 5,
+      "name": "Thermostat 2",
+      "description": "Thermostat device 2",
+      "device_type": 1,
+      "has_access": true,
+      "temperature": 0,
+      "target_temperature": 0,
+      "temperature_step": 0,
+      "min_temperature": 0,
+      "max_temperature": 200,
+      "value": 0,
+      "min": 0,
+      "max": 0
+    }
+]
+  

@@ -39,10 +39,10 @@ impl From<i32> for Role {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    username: String,
-    exp: usize,
-    role: Role,
+pub(crate) struct Claims {
+    pub(crate) username: String,
+    pub(crate) exp: usize,
+    pub(crate) role: Role,
 }
 
 impl AuthServer {
@@ -78,7 +78,7 @@ impl AuthServer {
     }
 
     fn generate_token(&self, username: &str, role: Role) -> String {
-        let expiration = 120;
+        let expiration = 10;
         let claims = Claims {
             username: username.to_owned(),
             exp: (chrono::Utc::now() + chrono::Duration::seconds(expiration as i64)).timestamp() as usize,
