@@ -1,5 +1,4 @@
-use std::{pin::Pin, sync::Arc, fs::File};
-
+use std::{pin::Pin, sync::Arc, fs::{File, OpenOptions}, io::Write};
 use chrono::Utc;
 use jsonwebtoken::{Validation, decode, DecodingKey};
 use serde::Deserialize;
@@ -12,7 +11,7 @@ use crate::{iot_manifest::{
     AddAccessRequest, AddAccessResponse, 
     RemoveAccessRequest, RemoveAccessResponse, 
     RecordStatisticsResponse, 
-    GetDevicesRequest, self,
+    GetDevicesRequest, self, DeviceType,
 }};
 
 
@@ -37,6 +36,18 @@ struct Device {
     min: i32,
     max: i32,
 }
+
+impl From<i32> for DeviceType {
+    fn from(device_type: i32) -> Self {
+        match device_type {
+            0 => DeviceType::Sensor,
+            1 => DeviceType::Thermostat,
+            _ => panic!("Invalid device type")
+        }
+    }
+}
+
+impl Eq for DeviceType {}
 
 #[allow(dead_code)]
 pub fn load() -> Vec<iot_manifest::Device> {
@@ -97,10 +108,58 @@ impl IoTService for IoTServerImpl {
 
     async fn record_statistics(
         &self,
-        request: tonic::Request<iot_manifest::Device>,
+        request: tonic::Request<DeviceProto>,
     ) -> Result<Response<RecordStatisticsResponse>, Status> {
         println!("\n\nRecord statistics request: {:?}", request);
-        
+        let request = request.into_inner();
+        if request.has_access {
+            println!("Device {} has access", request.id);
+        } else {
+            println!("Device {} does not have access", request.id);
+            return Ok(Response::new(RecordStatisticsResponse {}));
+        }
+
+        let log_dir = std::path::PathBuf::from_iter([std::env!("CARGO_MANIFEST_DIR"), "logs"]);
+        let log_file_path = log_dir.join(format!("{}-{}.log", request.id, request.r#type));
+    
+        let mut log_file = match OpenOptions::new().append(true).create(true).open(&log_file_path) {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to create log file: {}", err);
+                return Err(Status::internal("Failed to create log file"));
+            }
+        };
+    
+        let log_data = match request.r#type.into() {
+            DeviceType::Thermostat => {
+                format!(
+                    "Time: {}\n\tTemperature: {}\n\tTarget Temperature: {}\n\tTemperature Step: {}\n",
+                    Utc::now(), request.temperature, request.target_temperature, request.temperature_step
+                )
+            }
+            DeviceType::Sensor => {
+                format!(
+                    "Time: {}\n\tValue: {}\n\tMin Value: {}\n\tMax Value: {}\n",
+                    Utc::now(), request.value, request.min, request.max
+                )
+            }
+        };
+    
+        if let Err(err) = writeln!(log_file, "{}", log_data) {
+            eprintln!("Failed to write to log file: {}", err);
+            return Err(Status::internal("Failed to write to log file"));
+        }
+
+        self.devices.iter().for_each(|device| {
+            if device.id == request.id {
+                if device.r#type == DeviceType::Sensor {
+                    device.value = request.value;
+                } else if device.r#type == DeviceType::Thermostat {
+                    device.temperature = request.temperature;
+                }
+                println!("Device {:?} {} updated", device.r#type, device.id);
+            }
+        });
 
         Ok(Response::new(RecordStatisticsResponse {}))
     }

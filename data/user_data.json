@@ -13,38 +13,32 @@
     },
     {
         "id": 3,
-        "username": "sensor01",
-        "password": "sensor01",
+        "username": "sensor1",
+        "password": "sensor1",
         "role": "User"
     },
     {
         "id": 4,
-        "username": "sensor02",
-        "password": "sensor02",
+        "username": "sensor2",
+        "password": "sensor2",
         "role": "User"
     },
     {
         "id": 5,
-        "username": "thermostat01",
-        "password": "thermostat01",
+        "username": "thermostat1",
+        "password": "thermostat1",
         "role": "User"
     },
     {
         "id": 6,
-        "username": "thermostat02",
-        "password": "thermostat02",
+        "username": "thermostat2",
+        "password": "thermostat2",
         "role": "User"
     },
     {
         "id": 7,
-        "username": "sensor03",
-        "password": "sensor03",
-        "role": "User"
-    },
-    {
-        "id": 8,
-        "username": "sensor03",
-        "password": "sensor03",
+        "username": "sensor3",
+        "password": "sensor3",
         "role": "User"
     }
 ]

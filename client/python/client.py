@@ -50,12 +50,12 @@ def process_sensor(data):
     print('Setting sensor value to', data.value)
     return data
 
-def create_default_device_data(device_type):
+def create_default_device_data(device_type, device_number):
     data = iot_manifest_pb2.Device()
-    data.id = 0
+    data.id = int(device_number)
     data.name = ""
     data.description = ""
-    data.hasAccess = False
+    data.hasAccess = True
 
     if device_type == "thermostat":
         data.type = iot_manifest_pb2.THERMOSTAT
