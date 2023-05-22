@@ -113,7 +113,7 @@ class IoTServiceStub(object):
                 request_serializer=iot__manifest__pb2.GetDevicesRequest.SerializeToString,
                 response_deserializer=iot__manifest__pb2.Device.FromString,
                 )
-        self.RecordStatistics = channel.stream_unary(
+        self.RecordStatistics = channel.unary_unary(
                 '/iot_manifest.IoTService/RecordStatistics',
                 request_serializer=iot__manifest__pb2.Device.SerializeToString,
                 response_deserializer=iot__manifest__pb2.RecordStatisticsResponse.FromString,
@@ -144,7 +144,7 @@ class IoTServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def RecordStatistics(self, request_iterator, context):
+    def RecordStatistics(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -176,7 +176,7 @@ def add_IoTServiceServicer_to_server(servicer, server):
                     request_deserializer=iot__manifest__pb2.GetDevicesRequest.FromString,
                     response_serializer=iot__manifest__pb2.Device.SerializeToString,
             ),
-            'RecordStatistics': grpc.stream_unary_rpc_method_handler(
+            'RecordStatistics': grpc.unary_unary_rpc_method_handler(
                     servicer.RecordStatistics,
                     request_deserializer=iot__manifest__pb2.Device.FromString,
                     response_serializer=iot__manifest__pb2.RecordStatisticsResponse.SerializeToString,
@@ -224,7 +224,7 @@ class IoTService(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def RecordStatistics(request_iterator,
+    def RecordStatistics(request,
             target,
             options=(),
             channel_credentials=None,
@@ -234,7 +234,7 @@ class IoTService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/iot_manifest.IoTService/RecordStatistics',
+        return grpc.experimental.unary_unary(request, target, '/iot_manifest.IoTService/RecordStatistics',
             iot__manifest__pb2.Device.SerializeToString,
             iot__manifest__pb2.RecordStatisticsResponse.FromString,
             options, channel_credentials,

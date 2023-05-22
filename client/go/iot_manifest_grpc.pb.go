@@ -141,7 +141,7 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type IoTServiceClient interface {
 	GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (IoTService_GetDevicesClient, error)
-	RecordStatistics(ctx context.Context, opts ...grpc.CallOption) (IoTService_RecordStatisticsClient, error)
+	RecordStatistics(ctx context.Context, in *Device, opts ...grpc.CallOption) (*RecordStatisticsResponse, error)
 	SendCommand(ctx context.Context, opts ...grpc.CallOption) (IoTService_SendCommandClient, error)
 	AddAccess(ctx context.Context, opts ...grpc.CallOption) (IoTService_AddAccessClient, error)
 	RemoveAccess(ctx context.Context, opts ...grpc.CallOption) (IoTService_RemoveAccessClient, error)
@@ -187,42 +187,17 @@ func (x *ioTServiceGetDevicesClient) Recv() (*Device, error) {
 	return m, nil
 }
 
-func (c *ioTServiceClient) RecordStatistics(ctx context.Context, opts ...grpc.CallOption) (IoTService_RecordStatisticsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[1], "/iot_manifest.IoTService/RecordStatistics", opts...)
+func (c *ioTServiceClient) RecordStatistics(ctx context.Context, in *Device, opts ...grpc.CallOption) (*RecordStatisticsResponse, error) {
+	out := new(RecordStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/iot_manifest.IoTService/RecordStatistics", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &ioTServiceRecordStatisticsClient{stream}
-	return x, nil
-}
-
-type IoTService_RecordStatisticsClient interface {
-	Send(*Device) error
-	CloseAndRecv() (*RecordStatisticsResponse, error)
-	grpc.ClientStream
-}
-
-type ioTServiceRecordStatisticsClient struct {
-	grpc.ClientStream
-}
-
-func (x *ioTServiceRecordStatisticsClient) Send(m *Device) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *ioTServiceRecordStatisticsClient) CloseAndRecv() (*RecordStatisticsResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(RecordStatisticsResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 func (c *ioTServiceClient) SendCommand(ctx context.Context, opts ...grpc.CallOption) (IoTService_SendCommandClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[2], "/iot_manifest.IoTService/SendCommand", opts...)
+	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[1], "/iot_manifest.IoTService/SendCommand", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +228,7 @@ func (x *ioTServiceSendCommandClient) Recv() (*Device, error) {
 }
 
 func (c *ioTServiceClient) AddAccess(ctx context.Context, opts ...grpc.CallOption) (IoTService_AddAccessClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[3], "/iot_manifest.IoTService/AddAccess", opts...)
+	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[2], "/iot_manifest.IoTService/AddAccess", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +259,7 @@ func (x *ioTServiceAddAccessClient) Recv() (*AddAccessResponse, error) {
 }
 
 func (c *ioTServiceClient) RemoveAccess(ctx context.Context, opts ...grpc.CallOption) (IoTService_RemoveAccessClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[4], "/iot_manifest.IoTService/RemoveAccess", opts...)
+	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[3], "/iot_manifest.IoTService/RemoveAccess", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +294,7 @@ func (x *ioTServiceRemoveAccessClient) Recv() (*RemoveAccessResponse, error) {
 // for forward compatibility
 type IoTServiceServer interface {
 	GetDevices(*GetDevicesRequest, IoTService_GetDevicesServer) error
-	RecordStatistics(IoTService_RecordStatisticsServer) error
+	RecordStatistics(context.Context, *Device) (*RecordStatisticsResponse, error)
 	SendCommand(IoTService_SendCommandServer) error
 	AddAccess(IoTService_AddAccessServer) error
 	RemoveAccess(IoTService_RemoveAccessServer) error
@@ -333,8 +308,8 @@ type UnimplementedIoTServiceServer struct {
 func (UnimplementedIoTServiceServer) GetDevices(*GetDevicesRequest, IoTService_GetDevicesServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetDevices not implemented")
 }
-func (UnimplementedIoTServiceServer) RecordStatistics(IoTService_RecordStatisticsServer) error {
-	return status.Errorf(codes.Unimplemented, "method RecordStatistics not implemented")
+func (UnimplementedIoTServiceServer) RecordStatistics(context.Context, *Device) (*RecordStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecordStatistics not implemented")
 }
 func (UnimplementedIoTServiceServer) SendCommand(IoTService_SendCommandServer) error {
 	return status.Errorf(codes.Unimplemented, "method SendCommand not implemented")
@@ -379,30 +354,22 @@ func (x *ioTServiceGetDevicesServer) Send(m *Device) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _IoTService_RecordStatistics_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IoTServiceServer).RecordStatistics(&ioTServiceRecordStatisticsServer{stream})
-}
-
-type IoTService_RecordStatisticsServer interface {
-	SendAndClose(*RecordStatisticsResponse) error
-	Recv() (*Device, error)
-	grpc.ServerStream
-}
-
-type ioTServiceRecordStatisticsServer struct {
-	grpc.ServerStream
-}
-
-func (x *ioTServiceRecordStatisticsServer) SendAndClose(m *RecordStatisticsResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *ioTServiceRecordStatisticsServer) Recv() (*Device, error) {
-	m := new(Device)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _IoTService_RecordStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Device)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(IoTServiceServer).RecordStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/iot_manifest.IoTService/RecordStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IoTServiceServer).RecordStatistics(ctx, req.(*Device))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _IoTService_SendCommand_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -489,17 +456,17 @@ func (x *ioTServiceRemoveAccessServer) Recv() (*RemoveAccessRequest, error) {
 var IoTService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "iot_manifest.IoTService",
 	HandlerType: (*IoTServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RecordStatistics",
+			Handler:    _IoTService_RecordStatistics_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "GetDevices",
 			Handler:       _IoTService_GetDevices_Handler,
 			ServerStreams: true,
-		},
-		{
-			StreamName:    "RecordStatistics",
-			Handler:       _IoTService_RecordStatistics_Handler,
-			ClientStreams: true,
 		},
 		{
 			StreamName:    "SendCommand",

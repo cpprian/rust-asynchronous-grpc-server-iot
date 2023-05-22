@@ -97,7 +97,7 @@ impl IoTService for IoTServerImpl {
 
     async fn record_statistics(
         &self,
-        request: Request<tonic::Streaming<DeviceProto>>,
+        request: tonic::Request<iot_manifest::Device>,
     ) -> Result<Response<RecordStatisticsResponse>, Status> {
         println!("\n\nRecord statistics request: {:?}", request);
         
