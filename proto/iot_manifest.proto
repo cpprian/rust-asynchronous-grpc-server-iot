@@ -71,7 +71,7 @@ enum DeviceType {
 
 message DeviceEvent {
     int32 deviceId = 1;
-    string commandDescription = 2;
+    VerifyTokenRequest token = 2;
 
     // The following fields are only used for thermostat
     int32 targetTemperature = 3;

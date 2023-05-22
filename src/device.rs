@@ -1,9 +1,10 @@
-use std::{pin::Pin, sync::Arc, fs::{File, OpenOptions}, io::Write};
+use std::{pin::Pin, sync::Arc, fs::{File, OpenOptions}, io::Write, collections::HashMap};
 use chrono::Utc;
 use jsonwebtoken::{Validation, decode, DecodingKey};
 use serde::Deserialize;
+use tokio::sync::{RwLock, Mutex};
 use tonic::{Request, Response, Status, Streaming};
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 
 use crate::{iot_manifest::{
     io_t_service_server::{IoTService},
@@ -17,7 +18,7 @@ use crate::{iot_manifest::{
 
 #[derive(Default)]
 pub struct IoTServerImpl {
-    pub devices: Arc<Vec<DeviceProto>>
+    pub devices: Arc<RwLock<HashMap<i32, DeviceProto>>>
 }
 
 #[derive(Debug, Deserialize)]
@@ -48,7 +49,7 @@ impl From<i32> for DeviceType {
 }
 
 #[allow(dead_code)]
-pub fn load() -> Vec<iot_manifest::Device> {
+pub fn load() -> tokio::sync::RwLock<HashMap<i32, iot_manifest::Device>> {
     let data_dir = std::path::PathBuf::from_iter([std::env!("CARGO_MANIFEST_DIR"), "data"]);
     let file = File::open(data_dir.join("devices.json")).expect("Failed to open devices.json");
 
@@ -57,7 +58,7 @@ pub fn load() -> Vec<iot_manifest::Device> {
 
     decoded
         .into_iter()
-        .map(|device| iot_manifest::Device {
+        .map(|device| (device.id, iot_manifest::Device {
             id: device.id,
             name: device.name,
             description: device.description,
@@ -71,8 +72,8 @@ pub fn load() -> Vec<iot_manifest::Device> {
             value: device.value,
             min: device.min,
             max: device.max,
-        })
-        .collect()
+        }))
+        .collect::<HashMap<i32, iot_manifest::Device>>().into()
 }
 
 #[tonic::async_trait]
@@ -93,7 +94,7 @@ impl IoTService for IoTServerImpl {
 
             let devices = self.devices.clone();
             tokio::spawn(async move {
-                for device in devices.iter() {
+                for device in devices.read().await.values() {
                     tx.send(Ok(device.clone())).await.unwrap();
                 }
             });
@@ -148,11 +149,11 @@ impl IoTService for IoTServerImpl {
             return Err(Status::internal("Failed to write to log file"));
         }
 
-        self.devices.iter().for_each(|device| {
+        self.devices.write().await.values_mut().for_each(|device| {
             if device.id == request.id {
-                if device.r#type.into() == DeviceType::Sensor {
+                if <i32 as Into<DeviceType>>::into(device.r#type) == DeviceType::Sensor {
                     device.value = request.value;
-                } else if device.r#type.into() == DeviceType::Thermostat {
+                } else if <i32 as Into<DeviceType>>::into(device.r#type) == DeviceType::Thermostat {
                     device.temperature = request.temperature;
                 }
                 println!("Device {:?} {} updated", device.r#type, device.id);
@@ -169,7 +170,55 @@ impl IoTService for IoTServerImpl {
         request: Request<Streaming<DeviceEvent>>,
     ) -> Result<Response<Self::SendCommandStream>, Status> {
         println!("\n\nSend command request: {:?}", request);
-        unimplemented!()
+        let stream = Mutex::new(request.into_inner());
+        let (tx, rx) = tokio::sync::mpsc::channel(4);
+        let devices = self.devices.clone();
+
+        tokio::spawn(async move {
+            let mut stream = stream.lock().await;
+            while let Some(event) = stream.next().await {
+                let event = event.unwrap();
+                // Use the cloned devices
+                if !Self::validate_token(event.token.clone().unwrap().token, event.token.unwrap().role.into()) {
+                    println!("Invalid token");
+                    break;
+                }
+    
+                if devices.read().await.contains_key(&event.device_id) {
+                    println!("Device {} exists", event.device_id);
+                    let mut devices_inner = devices.write().await;
+                    devices_inner.get_mut(&event.device_id).unwrap().target_temperature = event.target_temperature;
+                    devices_inner.get_mut(&event.device_id).unwrap().temperature_step = event.temperature_step;
+                    devices_inner.get_mut(&event.device_id).unwrap().min_temperature = event.value;
+                } else {
+                    println!("Device {} does not exist", event.device_id);
+                    continue;
+                }
+    
+                let response = DeviceProto {
+                    id: event.device_id,
+                    name: devices.read().await.get(&event.device_id).unwrap().name.clone(),
+                    description: devices.read().await.get(&event.device_id).unwrap().description.clone(),
+                    has_access: devices.read().await.get(&event.device_id).unwrap().has_access,
+                    r#type: devices.read().await.get(&event.device_id).unwrap().r#type,
+                    temperature: devices.read().await.get(&event.device_id).unwrap().temperature,
+                    target_temperature: devices.read().await.get(&event.device_id).unwrap().target_temperature,
+                    temperature_step: devices.read().await.get(&event.device_id).unwrap().temperature_step,
+                    min_temperature: devices.read().await.get(&event.device_id).unwrap().min_temperature,
+                    max_temperature: devices.read().await.get(&event.device_id).unwrap().max_temperature,
+                    value: devices.read().await.get(&event.device_id).unwrap().value,
+                    min: devices.read().await.get(&event.device_id).unwrap().min,
+                    max: devices.read().await.get(&event.device_id).unwrap().max,
+                };
+    
+                tx.send(Ok(response)).await.unwrap();
+            }
+        });
+
+        let stream = ReceiverStream::new(rx);
+        let boxed_stream: Pin<Box<dyn Stream<Item = Result<DeviceProto, Status>> + Send + Sync + 'static>> = Box::pin(stream);
+    
+        Ok(Response::new(boxed_stream))
     }
 
     type AddAccessStream = Pin<Box<dyn tokio_stream::Stream<Item = Result<AddAccessResponse, Status>> + Send + Sync + 'static>>;
