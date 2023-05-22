@@ -47,8 +47,6 @@ impl From<i32> for DeviceType {
     }
 }
 
-impl Eq for DeviceType {}
-
 #[allow(dead_code)]
 pub fn load() -> Vec<iot_manifest::Device> {
     let data_dir = std::path::PathBuf::from_iter([std::env!("CARGO_MANIFEST_DIR"), "data"]);
@@ -152,9 +150,9 @@ impl IoTService for IoTServerImpl {
 
         self.devices.iter().for_each(|device| {
             if device.id == request.id {
-                if device.r#type == DeviceType::Sensor {
+                if device.r#type.into() == DeviceType::Sensor {
                     device.value = request.value;
-                } else if device.r#type == DeviceType::Thermostat {
+                } else if device.r#type.into() == DeviceType::Thermostat {
                     device.temperature = request.temperature;
                 }
                 println!("Device {:?} {} updated", device.r#type, device.id);
