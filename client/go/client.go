@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
+	"time"
 
 	grpc "google.golang.org/grpc"
 )
@@ -45,13 +45,17 @@ func main() {
 	fmt.Println("Token verified: ", verifyTokenResponse.Valid)
 
 	deviceHandler := NewIoTServiceClient(conn)
+	getDevicesRequest := &GetDevicesRequest{
+		Token: verifyTokenRequest,
+	}
 
+	var request_num int
+	DeviceRequestLoop:
 	for {
-		GetDevicesRequest := &GetDevicesRequest{
-			Token: verifyTokenRequest,
-		}
-	
-		deviceStream, err := deviceHandler.GetDevices(context.Background(), GetDevicesRequest)
+		request_num += 1
+		fmt.Println("\nRequest number: ", request_num)
+
+		deviceStream, err := deviceHandler.GetDevices(context.Background(), getDevicesRequest)
 		if err != nil {
 			log.Fatalf("Failed to get devices: %v", err)
 		}
@@ -63,10 +67,14 @@ func main() {
 			}
 			if err != nil {
 				log.Fatalf("Failed to receive device: %v", err)
-				os.Exit(1)
+				break DeviceRequestLoop
 			}
 	
 			fmt.Println("Received device: ", device)
 		}
+
+		time.Sleep(1 * time.Second)
 	}
+
+	fmt.Println("Client finished")
 }

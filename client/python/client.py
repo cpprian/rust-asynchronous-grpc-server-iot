@@ -16,6 +16,10 @@ def run():
     verify_token_response = stub.VerifyToken(verify_token_request)
     print('Token Valid:', verify_token_response.valid)
 
+    iot_service = iot_manifest_pb2_grpc.IoTServiceStub(channel)
+    while True:
+        iot_service.RecordStatistics()
+
 
 if __name__ == '__main__':
     run()
