@@ -142,9 +142,9 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 type IoTServiceClient interface {
 	GetDevices(ctx context.Context, in *GetDevicesRequest, opts ...grpc.CallOption) (IoTService_GetDevicesClient, error)
 	RecordStatistics(ctx context.Context, in *Device, opts ...grpc.CallOption) (*RecordStatisticsResponse, error)
-	SendCommand(ctx context.Context, opts ...grpc.CallOption) (IoTService_SendCommandClient, error)
-	AddAccess(ctx context.Context, opts ...grpc.CallOption) (IoTService_AddAccessClient, error)
-	RemoveAccess(ctx context.Context, opts ...grpc.CallOption) (IoTService_RemoveAccessClient, error)
+	SendCommand(ctx context.Context, in *DeviceEvent, opts ...grpc.CallOption) (*Device, error)
+	AddAccess(ctx context.Context, in *AddAccessRequest, opts ...grpc.CallOption) (*AddAccessResponse, error)
+	RemoveAccess(ctx context.Context, in *RemoveAccessRequest, opts ...grpc.CallOption) (*RemoveAccessResponse, error)
 }
 
 type ioTServiceClient struct {
@@ -196,97 +196,31 @@ func (c *ioTServiceClient) RecordStatistics(ctx context.Context, in *Device, opt
 	return out, nil
 }
 
-func (c *ioTServiceClient) SendCommand(ctx context.Context, opts ...grpc.CallOption) (IoTService_SendCommandClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[1], "/iot_manifest.IoTService/SendCommand", opts...)
+func (c *ioTServiceClient) SendCommand(ctx context.Context, in *DeviceEvent, opts ...grpc.CallOption) (*Device, error) {
+	out := new(Device)
+	err := c.cc.Invoke(ctx, "/iot_manifest.IoTService/SendCommand", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &ioTServiceSendCommandClient{stream}
-	return x, nil
+	return out, nil
 }
 
-type IoTService_SendCommandClient interface {
-	Send(*DeviceEvent) error
-	Recv() (*Device, error)
-	grpc.ClientStream
-}
-
-type ioTServiceSendCommandClient struct {
-	grpc.ClientStream
-}
-
-func (x *ioTServiceSendCommandClient) Send(m *DeviceEvent) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *ioTServiceSendCommandClient) Recv() (*Device, error) {
-	m := new(Device)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *ioTServiceClient) AddAccess(ctx context.Context, opts ...grpc.CallOption) (IoTService_AddAccessClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[2], "/iot_manifest.IoTService/AddAccess", opts...)
+func (c *ioTServiceClient) AddAccess(ctx context.Context, in *AddAccessRequest, opts ...grpc.CallOption) (*AddAccessResponse, error) {
+	out := new(AddAccessResponse)
+	err := c.cc.Invoke(ctx, "/iot_manifest.IoTService/AddAccess", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &ioTServiceAddAccessClient{stream}
-	return x, nil
+	return out, nil
 }
 
-type IoTService_AddAccessClient interface {
-	Send(*AddAccessRequest) error
-	Recv() (*AddAccessResponse, error)
-	grpc.ClientStream
-}
-
-type ioTServiceAddAccessClient struct {
-	grpc.ClientStream
-}
-
-func (x *ioTServiceAddAccessClient) Send(m *AddAccessRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *ioTServiceAddAccessClient) Recv() (*AddAccessResponse, error) {
-	m := new(AddAccessResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *ioTServiceClient) RemoveAccess(ctx context.Context, opts ...grpc.CallOption) (IoTService_RemoveAccessClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IoTService_ServiceDesc.Streams[3], "/iot_manifest.IoTService/RemoveAccess", opts...)
+func (c *ioTServiceClient) RemoveAccess(ctx context.Context, in *RemoveAccessRequest, opts ...grpc.CallOption) (*RemoveAccessResponse, error) {
+	out := new(RemoveAccessResponse)
+	err := c.cc.Invoke(ctx, "/iot_manifest.IoTService/RemoveAccess", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &ioTServiceRemoveAccessClient{stream}
-	return x, nil
-}
-
-type IoTService_RemoveAccessClient interface {
-	Send(*RemoveAccessRequest) error
-	Recv() (*RemoveAccessResponse, error)
-	grpc.ClientStream
-}
-
-type ioTServiceRemoveAccessClient struct {
-	grpc.ClientStream
-}
-
-func (x *ioTServiceRemoveAccessClient) Send(m *RemoveAccessRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *ioTServiceRemoveAccessClient) Recv() (*RemoveAccessResponse, error) {
-	m := new(RemoveAccessResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 // IoTServiceServer is the server API for IoTService service.
@@ -295,9 +229,9 @@ func (x *ioTServiceRemoveAccessClient) Recv() (*RemoveAccessResponse, error) {
 type IoTServiceServer interface {
 	GetDevices(*GetDevicesRequest, IoTService_GetDevicesServer) error
 	RecordStatistics(context.Context, *Device) (*RecordStatisticsResponse, error)
-	SendCommand(IoTService_SendCommandServer) error
-	AddAccess(IoTService_AddAccessServer) error
-	RemoveAccess(IoTService_RemoveAccessServer) error
+	SendCommand(context.Context, *DeviceEvent) (*Device, error)
+	AddAccess(context.Context, *AddAccessRequest) (*AddAccessResponse, error)
+	RemoveAccess(context.Context, *RemoveAccessRequest) (*RemoveAccessResponse, error)
 	mustEmbedUnimplementedIoTServiceServer()
 }
 
@@ -311,14 +245,14 @@ func (UnimplementedIoTServiceServer) GetDevices(*GetDevicesRequest, IoTService_G
 func (UnimplementedIoTServiceServer) RecordStatistics(context.Context, *Device) (*RecordStatisticsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecordStatistics not implemented")
 }
-func (UnimplementedIoTServiceServer) SendCommand(IoTService_SendCommandServer) error {
-	return status.Errorf(codes.Unimplemented, "method SendCommand not implemented")
+func (UnimplementedIoTServiceServer) SendCommand(context.Context, *DeviceEvent) (*Device, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendCommand not implemented")
 }
-func (UnimplementedIoTServiceServer) AddAccess(IoTService_AddAccessServer) error {
-	return status.Errorf(codes.Unimplemented, "method AddAccess not implemented")
+func (UnimplementedIoTServiceServer) AddAccess(context.Context, *AddAccessRequest) (*AddAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAccess not implemented")
 }
-func (UnimplementedIoTServiceServer) RemoveAccess(IoTService_RemoveAccessServer) error {
-	return status.Errorf(codes.Unimplemented, "method RemoveAccess not implemented")
+func (UnimplementedIoTServiceServer) RemoveAccess(context.Context, *RemoveAccessRequest) (*RemoveAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveAccess not implemented")
 }
 func (UnimplementedIoTServiceServer) mustEmbedUnimplementedIoTServiceServer() {}
 
@@ -372,82 +306,58 @@ func _IoTService_RecordStatistics_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IoTService_SendCommand_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IoTServiceServer).SendCommand(&ioTServiceSendCommandServer{stream})
-}
-
-type IoTService_SendCommandServer interface {
-	Send(*Device) error
-	Recv() (*DeviceEvent, error)
-	grpc.ServerStream
-}
-
-type ioTServiceSendCommandServer struct {
-	grpc.ServerStream
-}
-
-func (x *ioTServiceSendCommandServer) Send(m *Device) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *ioTServiceSendCommandServer) Recv() (*DeviceEvent, error) {
-	m := new(DeviceEvent)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _IoTService_SendCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceEvent)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(IoTServiceServer).SendCommand(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/iot_manifest.IoTService/SendCommand",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IoTServiceServer).SendCommand(ctx, req.(*DeviceEvent))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _IoTService_AddAccess_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IoTServiceServer).AddAccess(&ioTServiceAddAccessServer{stream})
-}
-
-type IoTService_AddAccessServer interface {
-	Send(*AddAccessResponse) error
-	Recv() (*AddAccessRequest, error)
-	grpc.ServerStream
-}
-
-type ioTServiceAddAccessServer struct {
-	grpc.ServerStream
-}
-
-func (x *ioTServiceAddAccessServer) Send(m *AddAccessResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *ioTServiceAddAccessServer) Recv() (*AddAccessRequest, error) {
-	m := new(AddAccessRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _IoTService_AddAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddAccessRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(IoTServiceServer).AddAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/iot_manifest.IoTService/AddAccess",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IoTServiceServer).AddAccess(ctx, req.(*AddAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _IoTService_RemoveAccess_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(IoTServiceServer).RemoveAccess(&ioTServiceRemoveAccessServer{stream})
-}
-
-type IoTService_RemoveAccessServer interface {
-	Send(*RemoveAccessResponse) error
-	Recv() (*RemoveAccessRequest, error)
-	grpc.ServerStream
-}
-
-type ioTServiceRemoveAccessServer struct {
-	grpc.ServerStream
-}
-
-func (x *ioTServiceRemoveAccessServer) Send(m *RemoveAccessResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *ioTServiceRemoveAccessServer) Recv() (*RemoveAccessRequest, error) {
-	m := new(RemoveAccessRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _IoTService_RemoveAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveAccessRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(IoTServiceServer).RemoveAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/iot_manifest.IoTService/RemoveAccess",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IoTServiceServer).RemoveAccess(ctx, req.(*RemoveAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // IoTService_ServiceDesc is the grpc.ServiceDesc for IoTService service.
@@ -461,30 +371,24 @@ var IoTService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "RecordStatistics",
 			Handler:    _IoTService_RecordStatistics_Handler,
 		},
+		{
+			MethodName: "SendCommand",
+			Handler:    _IoTService_SendCommand_Handler,
+		},
+		{
+			MethodName: "AddAccess",
+			Handler:    _IoTService_AddAccess_Handler,
+		},
+		{
+			MethodName: "RemoveAccess",
+			Handler:    _IoTService_RemoveAccess_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "GetDevices",
 			Handler:       _IoTService_GetDevices_Handler,
 			ServerStreams: true,
-		},
-		{
-			StreamName:    "SendCommand",
-			Handler:       _IoTService_SendCommand_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "AddAccess",
-			Handler:       _IoTService_AddAccess_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "RemoveAccess",
-			Handler:       _IoTService_RemoveAccess_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
 		},
 	},
 	Metadata: "iot_manifest.proto",

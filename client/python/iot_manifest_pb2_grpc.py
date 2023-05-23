@@ -118,17 +118,17 @@ class IoTServiceStub(object):
                 request_serializer=iot__manifest__pb2.Device.SerializeToString,
                 response_deserializer=iot__manifest__pb2.RecordStatisticsResponse.FromString,
                 )
-        self.SendCommand = channel.stream_stream(
+        self.SendCommand = channel.unary_unary(
                 '/iot_manifest.IoTService/SendCommand',
                 request_serializer=iot__manifest__pb2.DeviceEvent.SerializeToString,
                 response_deserializer=iot__manifest__pb2.Device.FromString,
                 )
-        self.AddAccess = channel.stream_stream(
+        self.AddAccess = channel.unary_unary(
                 '/iot_manifest.IoTService/AddAccess',
                 request_serializer=iot__manifest__pb2.AddAccessRequest.SerializeToString,
                 response_deserializer=iot__manifest__pb2.AddAccessResponse.FromString,
                 )
-        self.RemoveAccess = channel.stream_stream(
+        self.RemoveAccess = channel.unary_unary(
                 '/iot_manifest.IoTService/RemoveAccess',
                 request_serializer=iot__manifest__pb2.RemoveAccessRequest.SerializeToString,
                 response_deserializer=iot__manifest__pb2.RemoveAccessResponse.FromString,
@@ -150,19 +150,19 @@ class IoTServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SendCommand(self, request_iterator, context):
+    def SendCommand(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def AddAccess(self, request_iterator, context):
+    def AddAccess(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def RemoveAccess(self, request_iterator, context):
+    def RemoveAccess(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -181,17 +181,17 @@ def add_IoTServiceServicer_to_server(servicer, server):
                     request_deserializer=iot__manifest__pb2.Device.FromString,
                     response_serializer=iot__manifest__pb2.RecordStatisticsResponse.SerializeToString,
             ),
-            'SendCommand': grpc.stream_stream_rpc_method_handler(
+            'SendCommand': grpc.unary_unary_rpc_method_handler(
                     servicer.SendCommand,
                     request_deserializer=iot__manifest__pb2.DeviceEvent.FromString,
                     response_serializer=iot__manifest__pb2.Device.SerializeToString,
             ),
-            'AddAccess': grpc.stream_stream_rpc_method_handler(
+            'AddAccess': grpc.unary_unary_rpc_method_handler(
                     servicer.AddAccess,
                     request_deserializer=iot__manifest__pb2.AddAccessRequest.FromString,
                     response_serializer=iot__manifest__pb2.AddAccessResponse.SerializeToString,
             ),
-            'RemoveAccess': grpc.stream_stream_rpc_method_handler(
+            'RemoveAccess': grpc.unary_unary_rpc_method_handler(
                     servicer.RemoveAccess,
                     request_deserializer=iot__manifest__pb2.RemoveAccessRequest.FromString,
                     response_serializer=iot__manifest__pb2.RemoveAccessResponse.SerializeToString,
@@ -241,7 +241,7 @@ class IoTService(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def SendCommand(request_iterator,
+    def SendCommand(request,
             target,
             options=(),
             channel_credentials=None,
@@ -251,14 +251,14 @@ class IoTService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/iot_manifest.IoTService/SendCommand',
+        return grpc.experimental.unary_unary(request, target, '/iot_manifest.IoTService/SendCommand',
             iot__manifest__pb2.DeviceEvent.SerializeToString,
             iot__manifest__pb2.Device.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def AddAccess(request_iterator,
+    def AddAccess(request,
             target,
             options=(),
             channel_credentials=None,
@@ -268,14 +268,14 @@ class IoTService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/iot_manifest.IoTService/AddAccess',
+        return grpc.experimental.unary_unary(request, target, '/iot_manifest.IoTService/AddAccess',
             iot__manifest__pb2.AddAccessRequest.SerializeToString,
             iot__manifest__pb2.AddAccessResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def RemoveAccess(request_iterator,
+    def RemoveAccess(request,
             target,
             options=(),
             channel_credentials=None,
@@ -285,7 +285,7 @@ class IoTService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/iot_manifest.IoTService/RemoveAccess',
+        return grpc.experimental.unary_unary(request, target, '/iot_manifest.IoTService/RemoveAccess',
             iot__manifest__pb2.RemoveAccessRequest.SerializeToString,
             iot__manifest__pb2.RemoveAccessResponse.FromString,
             options, channel_credentials,

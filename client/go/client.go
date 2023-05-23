@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"time"
 
 	grpc "google.golang.org/grpc"
@@ -71,9 +72,32 @@ func main() {
 			}
 	
 			fmt.Println("Received device: ", device)
+
+			sendCommandRequest := &DeviceEvent{
+				DeviceId:          device.Id,
+				Token:             verifyTokenRequest,
+			}
+			if device.Type == 0 {
+				sendCommandRequest.Value = int32(rand.Intn(100))
+			} else if device.Type == 1 {
+				sendCommandRequest.TemperatureStep = int32(rand.Intn(100))
+				sendCommandRequest.TargetTemperature = int32(rand.Intn(100))
+			} else {
+				panic("Unknown device type")
+			}
+
+			// _, err = deviceHandler.SendCommand(context.Background(), sendCommandRequest)
+			// if err != nil {
+			// 	log.Fatalf("Failed to send command: %v", err)
+			// 	break DeviceRequestLoop
+			// }
+
+			fmt.Println("Sent command: ", sendCommandRequest)
 		}
 
 		time.Sleep(1 * time.Second)
+
+
 	}
 
 	fmt.Println("Client finished")

@@ -114,7 +114,7 @@ message RecordStatisticsResponse {
 service IoTService {
     rpc GetDevices(GetDevicesRequest) returns (stream Device) {}
     rpc RecordStatistics(Device) returns (RecordStatisticsResponse) {}
-    rpc SendCommand(stream DeviceEvent) returns (stream Device) {}
-    rpc AddAccess(stream AddAccessRequest) returns (stream AddAccessResponse) {}
-    rpc RemoveAccess(stream RemoveAccessRequest) returns (stream RemoveAccessResponse) {}
+    rpc SendCommand(DeviceEvent) returns (Device) {}
+    rpc AddAccess(AddAccessRequest) returns (AddAccessResponse) {}
+    rpc RemoveAccess(RemoveAccessRequest) returns (RemoveAccessResponse) {}
 }

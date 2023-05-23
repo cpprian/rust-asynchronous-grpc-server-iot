@@ -1,10 +1,10 @@
-use std::{pin::Pin, sync::Arc, fs::{File, OpenOptions}, io::Write, collections::HashMap};
+use std::{sync::Arc, fs::{File, OpenOptions}, io::Write, collections::HashMap};
 use chrono::Utc;
 use jsonwebtoken::{Validation, decode, DecodingKey};
 use serde::Deserialize;
-use tokio::sync::{RwLock, Mutex};
-use tonic::{Request, Response, Status, Streaming};
-use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
+use tokio::sync::{RwLock};
+use tonic::{Request, Response, Status};
+use tokio_stream::{wrappers::ReceiverStream};
 
 use crate::{iot_manifest::{
     io_t_service_server::{IoTService},
@@ -163,80 +163,61 @@ impl IoTService for IoTServerImpl {
         Ok(Response::new(RecordStatisticsResponse {}))
     }
 
-    type SendCommandStream = Pin<Box<dyn tokio_stream::Stream<Item = Result<DeviceProto, Status>> + Send + Sync + 'static>>;
-
     async fn send_command(
         &self,
-        request: Request<Streaming<DeviceEvent>>,
-    ) -> Result<Response<Self::SendCommandStream>, Status> {
+        request: Request<DeviceEvent>,
+    ) -> Result<Response<DeviceProto>, Status> {
         println!("\n\nSend command request: {:?}", request);
-        let stream = Mutex::new(request.into_inner());
-        let (tx, rx) = tokio::sync::mpsc::channel(4);
+        let request = request.into_inner();
         let devices = self.devices.clone();
 
-        tokio::spawn(async move {
-            let mut stream = stream.lock().await;
-            while let Some(event) = stream.next().await {
-                let event = event.unwrap();
-                // Use the cloned devices
-                if !Self::validate_token(event.token.clone().unwrap().token, event.token.unwrap().role.into()) {
-                    println!("Invalid token");
-                    break;
-                }
-    
-                if devices.read().await.contains_key(&event.device_id) {
-                    println!("Device {} exists", event.device_id);
-                    let mut devices_inner = devices.write().await;
-                    devices_inner.get_mut(&event.device_id).unwrap().target_temperature = event.target_temperature;
-                    devices_inner.get_mut(&event.device_id).unwrap().temperature_step = event.temperature_step;
-                    devices_inner.get_mut(&event.device_id).unwrap().min_temperature = event.value;
-                } else {
-                    println!("Device {} does not exist", event.device_id);
-                    continue;
-                }
-    
-                let response = DeviceProto {
-                    id: event.device_id,
-                    name: devices.read().await.get(&event.device_id).unwrap().name.clone(),
-                    description: devices.read().await.get(&event.device_id).unwrap().description.clone(),
-                    has_access: devices.read().await.get(&event.device_id).unwrap().has_access,
-                    r#type: devices.read().await.get(&event.device_id).unwrap().r#type,
-                    temperature: devices.read().await.get(&event.device_id).unwrap().temperature,
-                    target_temperature: devices.read().await.get(&event.device_id).unwrap().target_temperature,
-                    temperature_step: devices.read().await.get(&event.device_id).unwrap().temperature_step,
-                    min_temperature: devices.read().await.get(&event.device_id).unwrap().min_temperature,
-                    max_temperature: devices.read().await.get(&event.device_id).unwrap().max_temperature,
-                    value: devices.read().await.get(&event.device_id).unwrap().value,
-                    min: devices.read().await.get(&event.device_id).unwrap().min,
-                    max: devices.read().await.get(&event.device_id).unwrap().max,
-                };
-    
-                tx.send(Ok(response)).await.unwrap();
-            }
-        });
+        if !Self::validate_token(request.token.clone().unwrap().token, request.token.unwrap().role.into()) {
+            println!("Invalid token");
+            return Err(Status::unauthenticated("Invalid token"));
+        }
 
-        let stream = ReceiverStream::new(rx);
-        let boxed_stream: Pin<Box<dyn Stream<Item = Result<DeviceProto, Status>> + Send + Sync + 'static>> = Box::pin(stream);
+        if devices.read().await.contains_key(&request.device_id) {
+            println!("Device {} exists", request.device_id);
+            let mut devices_inner = devices.write().await;
+            devices_inner.get_mut(&request.device_id).unwrap().target_temperature = request.target_temperature;
+            devices_inner.get_mut(&request.device_id).unwrap().temperature_step = request.temperature_step;
+            devices_inner.get_mut(&request.device_id).unwrap().min_temperature = request.value;
+        } else {
+            println!("Device {} does not exist", request.device_id);
+            return Err(Status::not_found("Device does not exist"));
+        }
+
+        let response = DeviceProto {
+            id: request.device_id,
+            name: devices.read().await.get(&request.device_id).unwrap().name.clone(),
+            description: devices.read().await.get(&request.device_id).unwrap().description.clone(),
+            has_access: devices.read().await.get(&request.device_id).unwrap().has_access,
+            r#type: devices.read().await.get(&request.device_id).unwrap().r#type,
+            temperature: devices.read().await.get(&request.device_id).unwrap().temperature,
+            target_temperature: devices.read().await.get(&request.device_id).unwrap().target_temperature,
+            temperature_step: devices.read().await.get(&request.device_id).unwrap().temperature_step,
+            min_temperature: devices.read().await.get(&request.device_id).unwrap().min_temperature,
+            max_temperature: devices.read().await.get(&request.device_id).unwrap().max_temperature,
+            value: devices.read().await.get(&request.device_id).unwrap().value,
+            min: devices.read().await.get(&request.device_id).unwrap().min,
+            max: devices.read().await.get(&request.device_id).unwrap().max,
+        };
     
-        Ok(Response::new(boxed_stream))
+        Ok(Response::new(response))
     }
-
-    type AddAccessStream = Pin<Box<dyn tokio_stream::Stream<Item = Result<AddAccessResponse, Status>> + Send + Sync + 'static>>;
 
     async fn add_access(
         &self,
-        request: Request<tonic::Streaming<AddAccessRequest>>,
-    ) -> Result<Response<Self::AddAccessStream>, Status> {
+        request: Request<AddAccessRequest>,
+    ) -> Result<Response<AddAccessResponse>, Status> {
         println!("\n\nAdd access request: {:?}", request);
-        unimplemented!()
+        unimplemented!();
     }
-
-    type RemoveAccessStream = Pin<Box<dyn tokio_stream::Stream<Item = Result<RemoveAccessResponse, Status>> + Send + Sync + 'static>>;
 
     async fn remove_access(
         &self,
-        request: Request<tonic::Streaming<RemoveAccessRequest>>,
-    ) -> Result<Response<Self::RemoveAccessStream>, Status> {
+        request: Request<RemoveAccessRequest>,
+    ) -> Result<Response<RemoveAccessResponse>, Status> {
         println!("\n\nRemove access request: {:?}", request);
         unimplemented!()
     }
