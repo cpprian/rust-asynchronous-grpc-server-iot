@@ -87,13 +87,11 @@ message GetDevicesRequest {
 
 message AddAccessRequest {
     VerifyTokenRequest token = 1;
-    repeated int32 deviceIds = 2;
+    int32 deviceId = 2;
 }
 
 message AddAccessResponse {
-    Device devices = 1;
-    bool success = 2;
-    string message = 3;
+    bool success = 1;
 }
 
 message RemoveAccessRequest {
@@ -102,9 +100,7 @@ message RemoveAccessRequest {
 }
 
 message RemoveAccessResponse {
-    repeated Device devices = 1;
-    bool success = 2;
-    string message = 3;
+    bool success = 1;
 }
 
 message RecordStatisticsResponse {

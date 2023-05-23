@@ -13,7 +13,7 @@ use crate::{iot_manifest::{
     RemoveAccessRequest, RemoveAccessResponse, 
     RecordStatisticsResponse, 
     GetDevicesRequest, self, DeviceType,
-}};
+}, auth::Role};
 
 
 #[derive(Default)]
@@ -111,12 +111,12 @@ impl IoTService for IoTServerImpl {
     ) -> Result<Response<RecordStatisticsResponse>, Status> {
         println!("\n\nRecord statistics request: {:?}", request);
         let request = request.into_inner();
-        if request.has_access {
-            println!("Device {} has access", request.id);
-        } else {
-            println!("Device {} does not have access", request.id);
-            return Ok(Response::new(RecordStatisticsResponse {}));
-        }
+        let devices = self.devices.clone();
+
+        if !devices.read().await.get(&request.id).unwrap().has_access {
+            println!("Device {} does not exist", request.id);
+            return Err(Status::not_found("Device does not exist"));
+        } 
 
         let log_dir = std::path::PathBuf::from_iter([std::env!("CARGO_MANIFEST_DIR"), "logs"]);
         let log_file_path = log_dir.join(format!("{}-{}.log", request.id, request.r#type));
@@ -211,7 +211,34 @@ impl IoTService for IoTServerImpl {
         request: Request<AddAccessRequest>,
     ) -> Result<Response<AddAccessResponse>, Status> {
         println!("\n\nAdd access request: {:?}", request);
-        unimplemented!();
+        let request = request.into_inner();
+        let devices = self.devices.clone();
+
+        if !Self::validate_token(request.token.clone().unwrap().token, Role::Admin) {
+            println!("Invalid token");
+            if Role::Admin != request.token.unwrap().role.into() {
+                println!("User is not admin");
+                return Ok(Response::new(AddAccessResponse {
+                    success: false,
+                }));
+            } 
+            return Err(Status::unauthenticated("Invalid token"));
+        } 
+
+        if devices.read().await.contains_key(&request.device_id) {
+            println!("Device {} exists", request.device_id);
+            let mut devices_inner = devices.write().await;
+            devices_inner.get_mut(&request.device_id).unwrap().has_access = true;
+        } else {
+            println!("Device {} does not exist", request.device_id);
+            return Ok(Response::new(AddAccessResponse {
+                success: false,
+            }));
+        }
+
+        Ok(Response::new(AddAccessResponse {
+            success: true,
+        }))
     }
 
     async fn remove_access(
@@ -219,7 +246,33 @@ impl IoTService for IoTServerImpl {
         request: Request<RemoveAccessRequest>,
     ) -> Result<Response<RemoveAccessResponse>, Status> {
         println!("\n\nRemove access request: {:?}", request);
-        unimplemented!()
+        let request = request.into_inner();
+
+        if !Self::validate_token(request.token.clone().unwrap().token, Role::Admin) {
+            println!("Invalid token");
+            if Role::Admin != request.token.unwrap().role.into() {
+                println!("User is not admin");
+                return Ok(Response::new(RemoveAccessResponse {
+                    success: false,
+                }));
+            } 
+            return Err(Status::unauthenticated("Invalid token"));
+        }
+
+        if self.devices.read().await.contains_key(&request.device_id) {
+            println!("Device {} exists", request.device_id);
+            let mut devices_inner = self.devices.write().await;
+            devices_inner.get_mut(&request.device_id).unwrap().has_access = false;
+        } else {
+            println!("Device {} does not exist", request.device_id);
+            return Ok(Response::new(RemoveAccessResponse {
+                success: false,
+            }));
+        }
+
+        Ok(Response::new(RemoveAccessResponse {
+            success: true,
+        }))
     }
 }
 

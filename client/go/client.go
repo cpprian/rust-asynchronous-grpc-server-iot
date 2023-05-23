@@ -80,24 +80,48 @@ func main() {
 			if device.Type == 0 {
 				sendCommandRequest.Value = int32(rand.Intn(100))
 			} else if device.Type == 1 {
-				sendCommandRequest.TemperatureStep = int32(rand.Intn(100))
+				sendCommandRequest.TemperatureStep = int32(rand.Intn(10))
 				sendCommandRequest.TargetTemperature = int32(rand.Intn(100))
 			} else {
 				panic("Unknown device type")
 			}
 
-			// _, err = deviceHandler.SendCommand(context.Background(), sendCommandRequest)
-			// if err != nil {
-			// 	log.Fatalf("Failed to send command: %v", err)
-			// 	break DeviceRequestLoop
-			// }
+			_, err = deviceHandler.SendCommand(context.Background(), sendCommandRequest)
+			if err != nil {
+				log.Fatalf("Failed to send command: %v", err)
+				break DeviceRequestLoop
+			}
 
 			fmt.Println("Sent command: ", sendCommandRequest)
-		}
 
-		time.Sleep(1 * time.Second)
+			if rand.Intn(10) < 5 {
+				fmt.Println("Add access to device: ", device.Id)
+				addAccessRequest := &AddAccessRequest{
+					Token: verifyTokenRequest,
+					DeviceId: device.Id,
+				}
 
+				_, err = deviceHandler.AddAccess(context.Background(), addAccessRequest)
+				if err != nil {
+					log.Fatalf("Failed to add access: %v", err)
+					break DeviceRequestLoop
+				}
+			} else {
+				fmt.Println("Remove access to device: ", device.Id)
+				removeAccessRequest := &RemoveAccessRequest{
+					Token: verifyTokenRequest,
+					DeviceId: device.Id,
+				}
 
+				_, err = deviceHandler.RemoveAccess(context.Background(), removeAccessRequest)
+				if err != nil {
+					log.Fatalf("Failed to remove access: %v", err)
+					break DeviceRequestLoop
+				}
+			}
+ 		}
+
+		time.Sleep(2 * time.Second)
 	}
 
 	fmt.Println("Client finished")
