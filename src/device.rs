@@ -114,8 +114,8 @@ impl IoTService for IoTServerImpl {
         let devices = self.devices.clone();
 
         if !devices.read().await.get(&request.id).unwrap().has_access {
-            println!("Device {} does not exist", request.id);
-            return Err(Status::not_found("Device does not exist"));
+            println!("Device {} does not have access", request.id);
+            return Ok(Response::new(RecordStatisticsResponse{}));
         } 
 
         let log_dir = std::path::PathBuf::from_iter([std::env!("CARGO_MANIFEST_DIR"), "logs"]);
