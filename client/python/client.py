@@ -20,7 +20,7 @@ def run(device_type, device_number):
     print('Token Valid:', verify_token_response.valid)
 
     iot_service = iot_manifest_pb2_grpc.IoTServiceStub(channel)
-    data = create_default_device_data(device_type)
+    data = create_default_device_data(device_type, device_number)
     while True:
         device_data = process_device(data, device_type)
         print('Slow business logic...')

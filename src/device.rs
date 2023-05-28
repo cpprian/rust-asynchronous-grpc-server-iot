@@ -7,7 +7,7 @@ use tonic::{Request, Response, Status};
 use tokio_stream::{wrappers::ReceiverStream};
 
 use crate::{iot_manifest::{
-    io_t_service_server::{IoTService},
+    io_t_service_server::IoTService,
     DeviceEvent, Device as DeviceProto,
     AddAccessRequest, AddAccessResponse, 
     RemoveAccessRequest, RemoveAccessResponse, 
